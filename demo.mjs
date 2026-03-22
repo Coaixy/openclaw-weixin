@@ -53,7 +53,6 @@ function buildHeaders(token, body) {
 
 async function apiGet(baseUrl, path) {
   const url = `${baseUrl.replace(/\/$/, "")}/${path}`;
-  console.log(`  GET ${url}`);
   const res = await fetch(url);
   const text = await res.text();
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
