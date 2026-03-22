@@ -28,6 +28,41 @@ const BOT_TYPE = "3";
 const TOKEN_FILE = ".weixin-token.json";
 const CHANNEL_VERSION = "1.0.2";
 
+// ─── 二维码渲染 ───────────────────────────────────────────────────────────────
+
+const IMGCAT = "/Applications/iTerm.app/Contents/Resources/utilities/imgcat";
+
+/** 渲染二维码：iTerm2 内联图片优先，降级 ASCII art */
+async function renderQR(url) {
+  try {
+    const { default: QRCode } = await import("qrcode");
+    const { execFileSync, spawnSync } = await import("node:child_process");
+    const { writeFileSync, unlinkSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
+
+    const tmp = join(tmpdir(), `weixin-qr-${Date.now()}.png`);
+    await QRCode.toFile(tmp, url, { width: 360, margin: 2 });
+
+    // 尝试 iTerm2 imgcat
+    const result = spawnSync(IMGCAT, [tmp], { stdio: ["ignore", "inherit", "ignore"] });
+    unlinkSync(tmp);
+
+    if (result.status !== 0) throw new Error("imgcat failed");
+    console.log();
+  } catch {
+    // 降级：ASCII art
+    try {
+      const { default: qrterm } = await import("qrcode-terminal");
+      await new Promise((resolve) => {
+        qrterm.generate(url, { small: true }, (qr) => { console.log(qr); resolve(); });
+      });
+    } catch {
+      console.log("  二维码 URL:", url, "\n");
+    }
+  }
+}
+
 // ─── HTTP 工具 ────────────────────────────────────────────────────────────────
 
 /** X-WECHAT-UIN: 随机 uint32 → 十进制字符串 → base64 */
@@ -97,19 +132,8 @@ async function login() {
 
   console.log("📱 请用微信扫描以下二维码：\n");
 
-  // 终端渲染二维码
-  try {
-    const { default: qrterm } = await import("qrcode-terminal");
-    await new Promise((resolve) => {
-      qrterm.generate(qrcodeUrl, { small: true }, (qr) => {
-        console.log(qr);
-        resolve();
-      });
-    });
-  } catch {
-    console.log("  二维码 URL:", qrcodeUrl);
-    console.log("  （安装 qrcode-terminal 可在终端渲染：npm i -g qrcode-terminal）\n");
-  }
+  // 终端渲染二维码：优先 iTerm2 内联图片，降级 ASCII
+  await renderQR(qrcodeUrl);
 
   // 2. 轮询扫码状态
   console.log("⏳ 等待扫码...");
