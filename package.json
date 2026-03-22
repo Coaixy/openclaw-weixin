@@ -1,21 +1,29 @@
 {
   "name": "wechat-claude-bridge",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
-    "start": "node wechat-claude-bridge.mjs",
-    "login": "node wechat-claude-bridge.mjs --login",
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces --if-present"
+    "dev": "tsx src/main.ts",
+    "dev:login": "tsx src/main.ts --login",
+    "start": "node dist/main.js",
+    "login": "node dist/main.js --login",
+    "build": "tsc",
+    "build:all": "pnpm build && pnpm -r build",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm -r run test"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.81",
     "dotenv": "^17.3.1",
     "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.15",
+    "@types/qrcode": "^1.5.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
